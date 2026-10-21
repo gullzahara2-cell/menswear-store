@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Menswear Store</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f2; color: #222; }
+    .navbar { position: sticky; top: 0; z-index: 10; background: #1f2a44; color: #fff;
+      display: flex; justify-content: space-between; align-items: center; padding: 14px 24px; }
+    .brand { font-size: 22px; font-weight: bold; letter-spacing: 1px; color: #c8a24a; }
+    .nav-btn { background: #c8a24a; color: #1f2a44; border: none; padding: 8px 14px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .hero { background: linear-gradient(135deg, #1f2a44, #3b4a6b); color: #fff; text-align: center; padding: 50px 20px; }
+    .hero h1 { margin: 0 0 8px; font-size: 32px; }
+    .hero p { margin: 0; color: #d6d9e0; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 20px; }
+    .filter-btn { border: 1px solid #1f2a44; background: #fff; color: #1f2a44; padding: 7px 16px; border-radius: 20px; cursor: pointer; }
+    .filter-btn.active { background: #1f2a44; color: #fff; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
+    .card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: transform 0.2s; }
+    .card:hover { transform: translateY(-4px); }
+    .img { height: 240px; position: relative; display: flex; align-items: center; justify-content: center; font-size: 60px; overflow: hidden; }
+ .img img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    .info { padding: 14px; }
+    .info h3 { margin: 0 0 4px; font-size: 16px; }
+    .cat { color: #888; font-size: 13px; margin: 0 0 8px; }
+    .price { font-weight: bold; color: #1f2a44; margin: 0 0 10px; }
+    .add-btn { width: 100%; background: #1f2a44; color: #fff; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
+    .add-btn:hover { background: #c8a24a; color: #1f2a44; }
+    #cart { background: #fff; border-radius: 12px; padding: 20px; margin-top: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-width: 520px; }
+    #cart h2 { margin-top: 0; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .small-btn { background: #fff; border: 1px solid #c33; color: #c33; border-radius: 6px; padding: 4px 8px; cursor: pointer; margin-left: 8px; }
+    .clear-btn { background: #eee; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+    .footer { text-align: center; padding: 25px; color: #888; margin-top: 30px; }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="brand">MENSWEAR STORE</div>
+    <button class="nav-btn" onclick="goToCart()">Cart (<span id="count">0</span>)</button>
+  </div>
+
+  <div class="hero">
+    <h1>Style jo aap ki pehchan bane</h1>
+    <p>Shirts, Jeans, T-Shirts aur bohat kuch</p>
+  </div>
+
+  <div class="container">
+    <div class="filters" id="filters"></div>
+    <div class="grid" id="products"></div>
+
+    <div id="cart">
+      <h2>Aap ka Cart</h2>
+      <div id="cart-items"></div>
+      <h3>Total: Rs. <span id="total">0</span></h3>
+      <button class="clear-btn" onclick="clearCart()">Clear Cart</button>
+    </div>
+  </div>
+
+  <div class="footer">&copy; 2026 Menswear Store</div>
+
+  <script>
+    let products = [];
+    let currentCategory = 'All';
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+    const icons = { 'Shirts': '👔', 'Jeans': '👖', 'T-Shirts': '👕', 'Trousers': '👖', 'Hoodies': '🧥', 'Kurta': '🥻' };
+    const colors = ['#dbe4f3', '#f3e6d3', '#e1f0e3', '#f0dbe4', '#e8e3f5', '#f5f0d3'];
+
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(items => {
+        products = items;
+        renderFilters();
+        renderProducts();
+        renderCart();
+      })
+      .catch(err => {
+        document.getElementById('products').innerText = 'Error: ' + err;
+      });
+
+    function renderFilters() {
+      const cats = ['All'];
+      products.forEach(p => { if (cats.indexOf(p.category) === -1) cats.push(p.category); });
+      document.getElementById('filters').innerHTML = cats.map(c => {
+        const cls = c === currentCategory ? 'filter-btn active' : 'filter-btn';
+        return '<button class="' + cls + '" onclick="setCategory(\'' + c + '\')">' + c + '</button>';
+      }).join('');
+    }
+
+    function setCategory(c) {
+      currentCategory = c;
+      renderFilters();
+      renderProducts();
+    }
+
+    function renderProducts() {
+  const list = currentCategory === 'All' ? products : products.filter(p => p.category === currentCategory);
+  document.getElementById('products').innerHTML = list.map(p => {
+    return '<div class="card">' +
+      '<div class="img"><img src="/images/' + p.id + '.jpg" alt="' + p.name + '"></div>' +
+      '<div class="info"><h3>' + p.name + '</h3>' +
+      '<p class="cat">' + p.category + '</p>' +
+      '<p class="price">Rs. ' + p.price + '</p>' +
+      '<button class="add-btn" onclick="addToCart(' + p.id + ')">Add to Cart</button></div></div>';
+  }).join('');
+}
+
+    function addToCart(id) {
+      const found = cart.find(i => i.id === id);
+      if (found) { found.qty++; } else { cart.push({ id: id, qty: 1 }); }
+      saveCart();
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(i => i.id !== id);
+      saveCart();
+    }
+
+    function clearCart() {
+      cart = [];
+      saveCart();
+    }
+
+    function saveCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      renderCart();
+    }
+
+    function renderCart() {
+      let total = 0;
+      let count = 0;
+      const rows = cart.map(item => {
+        const p = products.find(x => x.id === item.id);
+        if (!p) return '';
+        total += p.price * item.qty;
+        count += item.qty;
+        return '<div class="row"><span>' + p.name + ' x ' + item.qty + '</span><span>Rs. ' +
+          (p.price * item.qty) + '<button class="small-btn" onclick="removeFromCart(' + p.id + ')">Remove</button></span></div>';
+      }).join('');
+      document.getElementById('cart-items').innerHTML = rows || '<p>Cart khali hai</p>';
+      document.getElementById('count').innerText = count;
+      document.getElementById('total').innerText = total;
+    }
+
+    function goToCart() {
+      document.getElementById('cart').scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

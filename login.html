@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Menswear Store</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f5f2; }
+    .top { background: #1f2a44; color: #c8a24a; padding: 14px 24px; font-size: 22px; font-weight: bold; }
+    .box { max-width: 340px; margin: 40px auto; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    input { width: 100%; padding: 10px; margin: 6px 0; box-sizing: border-box; }
+    button { width: 100%; padding: 10px; cursor: pointer; margin-top: 8px; background: #1f2a44; color: #fff; border: none; border-radius: 8px; }
+    #msg { color: red; margin-top: 10px; }
+    a { cursor: pointer; color: #1f2a44; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="top">MENSWEAR STORE</div>
+  <div class="box">
+    <h2 id="title">Login</h2>
+    <input id="name" placeholder="Naam" style="display:none">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="submitForm()" id="btn">Login</button>
+    <p id="switch">Account nahi hai? <a onclick="toggleMode()">Signup karo</a></p>
+    <div id="msg"></div>
+    <p><a href="/index.html">Wapas store par</a></p>
+  </div>
+
+  <script>
+    let mode = 'login';
+
+    function toggleMode() {
+      mode = mode === 'login' ? 'signup' : 'login';
+      const isLogin = mode === 'login';
+      document.getElementById('title').innerText = isLogin ? 'Login' : 'Signup';
+      document.getElementById('btn').innerText = isLogin ? 'Login' : 'Signup';
+      document.getElementById('name').style.display = isLogin ? 'none' : 'block';
+      document.getElementById('switch').innerHTML = isLogin
+        ? 'Account nahi hai? <a onclick="toggleMode()">Signup karo</a>'
+        : 'Pehle se account hai? <a onclick="toggleMode()">Login karo</a>';
+      document.getElementById('msg').innerText = '';
+    }
+
+    function submitForm() {
+      const body = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      };
+      fetch('/api/' + mode, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userName', data.name);
+            window.location.href = '/index.html';
+          } else {
+            document.getElementById('msg').innerText = data.message || 'Kuch masla hua';
+          }
+        })
+        .catch(() => {
+          document.getElementById('msg').innerText = 'Server se connection nahi hua';
+        });
+    }
+  </script>
+</body>
+</html>
